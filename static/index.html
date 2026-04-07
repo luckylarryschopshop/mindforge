@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mindforge Idea Tracker</title>
+  <style>
+    body { background:#0d1117; color:#e6edf3; font-family:sans-serif; margin:0; padding:0; }
+    header { background:#1a1f26; padding:1rem; text-align:center; }
+    h1 { margin:0; color:#f97316; }
+    .container { max-width:800px; margin:2rem auto; padding:0 1rem; }
+    .add-form { display:flex; gap:1rem; margin-bottom:1.5rem; }
+    .add-form input, .add-form button { padding:0.5rem; border: none; border-radius:4px; }
+    .add-form input { flex:1; background:#1a1f26; color:#e6edf3; }
+    .add-form button { background:#f97316; color:#0d1117; cursor:pointer; }
+    .search { margin-bottom:1.5rem; }
+    .search input { width:100%; padding:0.5rem; background:#1a1f26; color:#e6edf3; border: none; border-radius:4px; }
+    .idea-card { background:#1a1f26; padding:1rem; border-radius:6px; margin-bottom:1rem; display:flex; flex-direction:column; }
+    .idea-card h3 { margin:0.5rem 0; }
+    .idea-card p { margin:0.25rem 0; font-size:0.9rem; color:#a3a3a3; }
+    .idea-card .delete { margin-top:auto; background:#f97316; color:#0d1117; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mindforge Idea Tracker</h1>
+  </header>
+  <div class="container">
+    <form class="add-form">
+      <input type="text" id="title" placeholder="Idea title" required />
+      <input type="text" id="description" placeholder="Idea description" required />
+      <button type="submit">Add Idea</button>
+    </form>
+    <input class="search" type="text" id="search" placeholder="Search ideas..." />
+    <div id="ideas"></div>
+  </div>
+  <script>
+    const api = '/api/ideas';
+    const ideasDiv = document.getElementById('ideas');
+    const addForm = document.querySelector('.add-form');
+    const searchInput = document.getElementById('search');
+
+    async function fetchIdeas() {
+      const res = await fetch(api);
+      const ideas = await res.json();
+      ideasDiv.innerHTML = '';
+      ideas.forEach(idea => {
+        const card = document.createElement('div');
+        card.className = 'idea-card';
+        card.innerHTML = `
+          <h3>${idea.title}</h3>
+          <p>${idea.description}</p>
+          <p>${new Date(idea.timestamp).toLocaleString()}</p>
+          <button class="delete" onclick="deleteIdea(${idea.id})">Delete</button>
+        `;
+        ideasDiv.appendChild(card);
+      });
+    }
+
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) });
+      fetchIdeas();
+      addForm.reset();
+    });
+
+    async function deleteIdea(id) {
+      await fetch(`${api}/${id}`, { method: 'DELETE' });
+      fetchIdeas();
+    }
+
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.toLowerCase();
+      fetchIdeas().then(() => {
+        document.querySelectorAll('.idea-card').forEach(card => {
+          const title = card.querySelector('h3').textContent.toLowerCase();
+          card.style.display = title.includes(term) ? 'block' : 'none';
+        });
+      });
+    });
+
+    fetchIdeas();
+  </script>
+</body>
+</html>

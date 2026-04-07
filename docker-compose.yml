@@ -1,0 +1,7 @@
+services:
+  mindforge:
+    build: .
+    ports:
+      - "3003:8000"
+    volumes:
+      - ./data:/app/data
